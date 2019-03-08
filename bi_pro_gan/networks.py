@@ -287,16 +287,18 @@ def D_paper(
                     x = act(apply_bias(conv2d(x, fmaps=nf(res-1), kernel=3, use_wscale=use_wscale)))
                     
                 ## My Change
-                with tf.variable_scope('Conv_down0'):   
-                      x = act(apply_bias(conv2d(x, fmaps=nf(res-1), kernel=3, strides=[1,1,2,2], use_wscale=use_wscale)))
+                
+#                 with tf.variable_scope('Conv_down0'):   
+#                     x = act(apply_bias(conv2d_downscale2d(x, fmaps=nf(res-1), kernel=3, use_wscale=use_wscale)))
                         
-                with tf.variable_scope('Conv_down1'):      
-                    x = act(apply_bias(conv2d(x, fmaps=nf(res-1), kernel=3, strides=[1,1,2,2], use_wscale=use_wscale)))
-                    #print (x)
-        
+#                 with tf.variable_scope('Conv_down1'):      
+#                     x = act(apply_bias(conv2d_downscale2d(x, fmaps=nf(res-1), kernel=3, use_wscale=use_wscale)))
+                
+                shape = x.get_shape().as_list()
                 with tf.variable_scope('Concat'):
-                    x = tf.reshape( x, shape=[-1, nf(res-1) ], name = "Reshape" )
+                    x = tf.reshape( x, shape=[-1, np.prod(shape[1:]) ], name = "Reshape" )
                     x = tf.concat([x,latents_in ], axis=1, name="x_z") 
+                    
                 ###
                 
                 with tf.variable_scope('Dense0'):
@@ -421,7 +423,7 @@ def pro_Encoder(
                 
                 with tf.variable_scope('Dense0'):
                     x = apply_bias( dense(x, fmaps=z_len, use_wscale=use_wscale) )
-
+                    x = tf.nn.tanh(x)
             return x
     
     # Linear structure: simple but inefficient.

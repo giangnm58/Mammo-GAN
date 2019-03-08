@@ -190,9 +190,9 @@ def train_progressive_gan(
             reals_gpu = process_reals(reals_split[gpu], lod_in, mirror_augment, training_set.dynamic_range, drange_net)
             labels_gpu = labels_split[gpu]
             with tf.name_scope('G_loss'), tf.control_dependencies(lod_assign_ops):
-                G_loss = tfutil.call_func_by_name(G=G_gpu, D=D_gpu,E =E_gpu, opt=G_opt, training_set=training_set, minibatch_size=minibatch_split, **config.G_loss)
+                G_loss = tfutil.call_func_by_name(G=G_gpu, D=D_gpu,E=E_gpu, opt=G_opt, training_set=training_set, minibatch_size=minibatch_split, **config.G_loss)
             with tf.name_scope('D_loss'), tf.control_dependencies(lod_assign_ops):
-                D_loss = tfutil.call_func_by_name(G=G_gpu, D=D_gpu, E =E_gpu, opt=D_opt, training_set=training_set, minibatch_size=minibatch_split, reals=reals_gpu, labels=labels_gpu, **config.D_loss)
+                D_loss = tfutil.call_func_by_name(G=G_gpu, D=D_gpu,E=E_gpu, opt=D_opt, training_set=training_set, minibatch_size=minibatch_split, reals=reals_gpu, labels=labels_gpu, **config.D_loss)
             with tf.name_scope('E_loss'), tf.control_dependencies(lod_assign_ops):
                 E_loss = tfutil.call_func_by_name(G=G_gpu, D=D_gpu,E =E_gpu, opt=E_opt, training_set=training_set, minibatch_size=minibatch_split,reals=reals_gpu, **config.E_loss)
             G_opt.register_gradients(tf.reduce_mean(G_loss), G_gpu.trainables)
@@ -273,7 +273,9 @@ def train_progressive_gan(
             if cur_tick % image_snapshot_ticks == 0 or done:
                 grid_fakes = Gs.run(grid_latents, grid_labels, minibatch_size=sched.minibatch//config.num_gpus)
                 misc.save_image_grid(grid_fakes, os.path.join(result_subdir, 'fakes%06d.png' % (cur_nimg // 1000)), drange=drange_net, grid_size=grid_size)
-                misc.save_all_res(1024, Gs, result_subdir,50,minibatch_size=sched.minibatch//config.num_gpus)
+                
+                misc.save_all_res(training_set.shape[1], Gs, result_subdir,50,minibatch_size=sched.minibatch//config.num_gpus)
+            
             if cur_tick % network_snapshot_ticks == 0 or done:
                 misc.save_pkl((G, D, Gs, E), os.path.join(result_subdir, 'network-snapshot-%06d.pkl' % (cur_nimg // 1000)))
 

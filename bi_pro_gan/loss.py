@@ -25,10 +25,12 @@ def fp32(*values):
 def G_wgan_acgan(G, D, opt, training_set, minibatch_size,
     cond_weight = 1.0): # Weight of the conditioning term.
 
-    latents = tf.random_normal([minibatch_size] + G.input_shapes[0][1:])
+    #latents = tf.random_normal([minibatch_size] + G.input_shapes[0][1:])
+    latents = tf.random_uniform( [minibatch_size] + G.input_shapes[0][1:], -1.0, 1.0)
     labels = training_set.get_random_labels_tf(minibatch_size)
     fake_images_out = G.get_output_for(latents, labels, is_training=True)
-    fake_scores_out, fake_labels_out = fp32(D.get_output_for(fake_images_out,latents,is_training=True))
+    #fake_scores_out, fake_labels_out = fp32(D.get_output_for(fake_images_out,latents,is_training=True))
+    fake_scores_out, fake_labels_out = fp32(D.get_output_for(fake_images_out,is_training=True))
     loss = -fake_scores_out
 
     if D.output_shapes[1][1] > 0:
@@ -46,10 +48,13 @@ def D_wgangp_acgan(G, D, opt, training_set, minibatch_size, reals, labels, laten
     wgan_target     = 1.0,      # Target value for gradient magnitudes.
     cond_weight     = 1.0):     # Weight of the conditioning terms.
 
-    latents = tf.random_normal([minibatch_size] + G.input_shapes[0][1:])
+    #latents = tf.random_normal([minibatch_size] + G.input_shapes[0][1:])
+    latents = tf.random_uniform( [minibatch_size] + G.input_shapes[0][1:], -1.0, 1.0)
     fake_images_out = G.get_output_for(latents, labels, is_training=True)
-    real_scores_out, real_labels_out = fp32(D.get_output_for(reals,latents, is_training=True))
-    fake_scores_out, fake_labels_out = fp32(D.get_output_for(fake_images_out,latents, is_training=True))
+    #real_scores_out, real_labels_out = fp32(D.get_output_for(reals,latents, is_training=True))
+    #fake_scores_out, fake_labels_out = fp32(D.get_output_for(fake_images_out,latents, is_training=True))
+    real_scores_out, real_labels_out = fp32(D.get_output_for(reals,is_training=True))
+    fake_scores_out, fake_labels_out = fp32(D.get_output_for(fake_images_out, is_training=True))
     real_scores_out = tfutil.autosummary('Loss/real_scores', real_scores_out)
     fake_scores_out = tfutil.autosummary('Loss/fake_scores', fake_scores_out)
     loss = fake_scores_out - real_scores_out
@@ -57,7 +62,8 @@ def D_wgangp_acgan(G, D, opt, training_set, minibatch_size, reals, labels, laten
     with tf.name_scope('GradientPenalty'):
         mixing_factors = tf.random_uniform([minibatch_size, 1, 1, 1], 0.0, 1.0, dtype=fake_images_out.dtype)
         mixed_images_out = tfutil.lerp(tf.cast(reals, fake_images_out.dtype), fake_images_out, mixing_factors)
-        mixed_scores_out, mixed_labels_out = fp32(D.get_output_for(mixed_images_out,latents, is_training=True))
+        #mixed_scores_out, mixed_labels_out = fp32(D.get_output_for(mixed_images_out,latents, is_training=True))
+        mixed_scores_out, mixed_labels_out = fp32(D.get_output_for(mixed_images_out, is_training=True))
         mixed_scores_out = tfutil.autosummary('Loss/mixed_scores', mixed_scores_out)
         mixed_loss = opt.apply_loss_scaling(tf.reduce_sum(mixed_scores_out))
         mixed_grads = opt.undo_loss_scaling(fp32(tf.gradients(mixed_loss, [mixed_images_out])[0]))
@@ -188,7 +194,8 @@ def D_bigan_acgan(G, D, E, opt, training_set, minibatch_size, reals, labels, lat
     wgan_target     = 1.0,      # Target value for gradient magnitudes.
     cond_weight     = 1.0):     # Weight of the conditioning terms.
 
-    latents = tf.random_normal([minibatch_size] + G.input_shapes[0][1:])
+    #latents = tf.random_normal([minibatch_size] + G.input_shapes[0][1:])
+    latents = tf.random_uniform( [minibatch_size] + G.input_shapes[0][1:], -1.0, 1.0)
     fake_images_out = G.get_output_for(latents, labels, is_training=True)
     L = E.get_output_for(reals, is_training=True)
     real_scores_out, real_labels_out = fp32(D.get_output_for(reals,L, is_training=True))
@@ -230,7 +237,8 @@ def D_bigan_acgan(G, D, E, opt, training_set, minibatch_size, reals, labels, lat
 def G_bigan_acgan(G, D,E,  opt, training_set, minibatch_size,
     cond_weight = 1.0): # Weight of the conditioning term.
 
-    latents = tf.random_normal([minibatch_size] + G.input_shapes[0][1:])
+    #latents = tf.random_normal([minibatch_size] + G.input_shapes[0][1:])
+    latents = tf.random_uniform( [minibatch_size] + G.input_shapes[0][1:], -1.0, 1.0)
     labels = training_set.get_random_labels_tf(minibatch_size)
     fake_images_out = G.get_output_for(latents, labels, is_training=True)
     fake_scores_out, fake_labels_out = fp32(D.get_output_for(fake_images_out,latents,is_training=True))
@@ -246,11 +254,11 @@ def G_bigan_acgan(G, D,E,  opt, training_set, minibatch_size,
 # Encode loss function used in the paper 
 
 def E_bigan_acgan(G, D, E, opt, training_set, minibatch_size,reals,
-    cond_weight = 1.0): # Weight of the conditioning term.
+    cond_weight = 1.0, eps = 0.001): # Weight of the conditioning term.
 
     L = E.get_output_for(reals, is_training=True)
     real_scores_out, real_labels_out = fp32(D.get_output_for(reals,L, is_training=True))
-    loss = real_scores_out
+    loss = real_scores_out + eps * tf.abs( tf.norm( L ) - 1 )
     return loss
 
 
