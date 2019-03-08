@@ -51,9 +51,9 @@ E_opt       = EasyDict(beta1=0.0, beta2=0.99, epsilon=1e-8) # Options for discri
 #G_loss      = EasyDict(func='loss.G_wgan_acgan')            # Options for generator loss.
 #D_loss      = EasyDict(func='loss.D_wgangp_acgan')          # Options for discriminator loss.
 
-G_loss      = EasyDict(func='loss.G_lo_gan')            # Options for generator loss.
-D_loss      = EasyDict(func='loss.D_lo_gan')          # Options for discriminator loss.
-E_loss      = EasyDict(func='loss.E_lo_gan')
+G_loss      = EasyDict(func='loss.G_bigan_acgan')            # Options for generator loss.
+D_loss      = EasyDict(func='loss.D_bigan_acgan')          # Options for discriminator loss.
+E_loss      = EasyDict(func='loss.E_bigan_acgan')
 sched       = EasyDict()                                    # Options for train.TrainingSchedule.
 grid        = EasyDict(size='1080p', layout='random')       # Options for train.setup_snapshot_image_grid().
 
