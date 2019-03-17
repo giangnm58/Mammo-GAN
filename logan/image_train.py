@@ -5,7 +5,7 @@
 import os
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 import tensorflow as tf
 # from tensorflow.contrib import layers
@@ -58,7 +58,8 @@ sess = tf.InteractiveSession(config=run_config)
 
 # [2] CelebA
 dataset_name = 'aiims_cc_256'
-data_dir = '../aiims_cc_256'
+#data_dir = '../aiims_cc_256'
+data_dir = '/home/suransh/new_drive/aiims_cc_256'
 config = {'model_name': 'BIGAN',
           'ext': 'png',
           's': 256,
@@ -69,7 +70,7 @@ config = {'model_name': 'BIGAN',
           'gf_dim': 64,
           'df_dim': 64,
           'interpolations': 4,
-          'sampler_batch_size': 100,
+          'sampler_batch_size': 64,
           'activation_fn': ops.lrelu,
           'out_activation_fn': tf.nn.tanh,
           'g_bn': True,

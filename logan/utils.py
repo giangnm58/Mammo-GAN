@@ -7,7 +7,7 @@ import ops
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-
+from PIL import Image
 
 def make_sure_path_exits(path):
     os.makedirs(path, exist_ok=True)
@@ -32,7 +32,8 @@ def save_images_h(path, images, imagesPerRow=16):
         i = idx % imagesPerRow
         j = idx // imagesPerRow
         img[j * h:j * h + h, i * w:i * w + w, :] = image
-    return cv2.imwrite(path, cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
+    return Image.fromarray(np.squeeze(img).astype('uint8')).save(path)
+    #return cv2.imwrite(path, cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
 
 
 def save_images_v(path, images, imagesPerColumn=16):
@@ -43,7 +44,8 @@ def save_images_v(path, images, imagesPerColumn=16):
         i = idx // imagesPerColumn
         j = idx % imagesPerColumn
         img[j * h:j * h + h, i * w:i * w + w, :] = image
-    return cv2.imwrite(path, cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
+    return Image.fromarray(np.squeeze(img).astype('uint8')).save(path)
+    #return cv2.imwrite(path, cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
 
 
 def extract_recons(img_path, save_folder, indices, offset):
@@ -51,7 +53,8 @@ def extract_recons(img_path, save_folder, indices, offset):
     s = int(img.shape[0] / 3)
     for i, j in enumerate(indices):
         slice = img[s:, s * j:s * (j + 1), :]
-        cv2.imwrite(os.path.join(save_folder, str(i + offset) + '.png'), slice)
+        Image.fromarray(np.squeeze(slice).astype('uint8')).save( os.path.join(save_folder, str(i + offset) + '.png') )
+        #cv2.imwrite(os.path.join(save_folder, str(i + offset) + '.png'), slice)
 
 
 def extract_gens(img_path, save_folder, indices, offset):
@@ -59,7 +62,8 @@ def extract_gens(img_path, save_folder, indices, offset):
     s = int(img.shape[0] / 3)
     for i, j in enumerate(indices):
         slice = img[:s, s * j:s * (j + 1), :]
-        cv2.imwrite(os.path.join(save_folder, str(i + offset) + '.png'), slice)
+        Image.fromarray(np.squeeze(slice).astype('uint8')).save( os.path.join(save_folder, str(i + offset) + '.png') )
+        #cv2.imwrite(os.path.join(save_folder, str(i + offset) + '.png'), slice)
 
 
 def read_images(imgpaths):
@@ -391,7 +395,10 @@ def printProgressBar(iteration, total, prefix='', suffix='', decimals=1, length=
     percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
     filledLength = int(length * iteration // total)
     bar = fill * filledLength + '-' * (length - filledLength)
-    print('\r%s |%s| %s%% %s' % (prefix, bar, percent, suffix), end='\r')
+    #message = '\r%s |%s| %s%% %s' % (prefix, bar, percent, suffix)
+    message = '\r%s %s%% %s' % (prefix,percent, suffix)		
+    #message = message.encode('utf-8')	 
+    print(message,end='\r')
     # Print New Line on Complete
     if iteration == total:
         print()
