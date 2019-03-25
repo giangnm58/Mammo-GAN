@@ -371,15 +371,20 @@ def pro_Encoder(
     images_in,                          # Input: Images [minibatch, channel, height, width].
     z_len = 512,
     num_channels        = 1,            # Number of input color channels. Overridden based on dataset.
-    resolution          = 32,           # Input resolution. Overridden based on dataset.
+    resolution          = 32,           # Output resolution. Overridden based on dataset.
     label_size          = 0,            # Dimensionality of the labels, 0 if no labels. Overridden based on dataset.
     fmap_base           = 8192,         # Overall multiplier for the number of feature maps.
     fmap_decay          = 1.0,          # log2 feature map reduction when doubling the resolution.
     fmap_max            = 512,          # Maximum number of feature maps in any layer.
+    latent_size         = None,         # Dimensionality of the latent vectors. None = min(fmap_base, fmap_max).
+    normalize_latents   = True,         # Normalize latent vectors before feeding them to the network?
     use_wscale          = True,         # Enable equalized learning rate?
+    use_pixelnorm       = True,         # Enable pixelwise feature vector normalization?
+    pixelnorm_epsilon   = 1e-8,         # Constant epsilon for pixelwise feature vector normalization.
+    use_leakyrelu       = True,         # True = leaky ReLU, False = ReLU.
     dtype               = 'float32',    # Data type to use for activations and outputs.
-    fused_scale         = True,         # True = use fused conv2d + downscale2d, False = separate downscale2d layers.
-    structure           = None,         # 'linear' = human-readable, 'recursive' = efficient, None = select automatically
+    fused_scale         = True,         # True = use fused upscale2d + conv2d, False = separate upscale2d layers.
+    structure           = None,         # 'linear' = human-readable, 'recursive' = efficient, None = select automatically.
     is_template_graph   = False,        # True = template graph constructed by the Network class, False = actual evaluation.
     **kwargs):                          # Ignore unrecognized keyword args.
     
@@ -388,6 +393,7 @@ def pro_Encoder(
     def nf(stage): return min(int(fmap_base / (2.0 ** (stage * fmap_decay))), fmap_max)
     if structure is None: structure = 'linear' if is_template_graph else 'recursive'
     act = leaky_relu
+    def PN(x): return pixel_norm(x, epsilon=pixelnorm_epsilon) if use_pixelnorm else x
     
     def nf(stage): return min(int(fmap_base / (2.0 ** (stage * fmap_decay))), fmap_max)
     latent_size = nf(0)
@@ -405,24 +411,27 @@ def pro_Encoder(
         with tf.variable_scope('%dx%d' % (2**res, 2**res)):
             if res >= 3: # 8x8 and up
                 with tf.variable_scope('Conv0'):
-                    x = act(apply_bias(conv2d(x, fmaps=nf(res-1), kernel=3, use_wscale=use_wscale)))
+                    x = PN( act(apply_bias(conv2d(x, fmaps=nf(res-1), kernel=3, use_wscale=use_wscale))) )
                 if fused_scale:
                     with tf.variable_scope('Conv1_down'):
-                        x = act(apply_bias(conv2d_downscale2d(x, fmaps=nf(res-2), kernel=3, use_wscale=use_wscale)))
+                        x = PN( act(apply_bias(conv2d_downscale2d(x, fmaps=nf(res-2), kernel=3, use_wscale=use_wscale))) )
                 else:
                     with tf.variable_scope('Conv1'):
-                        x = act(apply_bias(conv2d(x, fmaps=nf(res-2), kernel=3, use_wscale=use_wscale)))
+                        x = PN( act(apply_bias(conv2d(x, fmaps=nf(res-2), kernel=3, use_wscale=use_wscale))) )
                     x = downscale2d(x)
             else: # 4x4
                 with tf.variable_scope('Conv'):
-                    x = act(apply_bias(conv2d(x, fmaps=nf(res-1), kernel=3, use_wscale=use_wscale)))
+                    x = PN( act(apply_bias(conv2d(x, fmaps=nf(res-1), kernel=3, use_wscale=use_wscale))) )
+                    x = PN( act(apply_bias(x)) )
                     
                 shape = x.get_shape().as_list()
                 with tf.variable_scope('Reshape'):
                     x = tf.reshape( x, shape=[-1, np.prod(shape[1:]) ], name = "Reshape" )
                 
                 with tf.variable_scope('Dense0'):
-                    x = apply_bias( dense(x, fmaps=z_len, use_wscale=use_wscale) )
+                    x = dense(x, fmaps=z_len,gain=np.sqrt(2)/4, use_wscale=use_wscale)
+                    x = tf.math.l2_normalize(x,axis=1)
+                    x = PN(x)
                     x = tf.nn.tanh(x)
             return x
     

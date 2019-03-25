@@ -28,7 +28,7 @@ tf_config = EasyDict()  # TensorFlow session config, set by tfutil.init_tf().
 env = EasyDict()        # Environment variables, set by the main program in train.py.
 
 tf_config['graph_options.place_pruned_graph']   = True      # False (default) = Check that all ops are available on the designated device. True = Skip the check for ops that are not used.
-tf_config['gpu_options.allow_growth']          = True     # False (default) = Allocate all GPU memory at the beginning. True = Allocate only as much GPU memory as needed.
+#tf_config['gpu_options.allow_growth']          = False     # False (default) = Allocate all GPU memory at the beginning. True = Allocate only as much GPU memory as needed.
 #tf_config['gpu_options.polling_inactive_delay_msecs'] = 10
 #env.CUDA_VISIBLE_DEVICES                       = '1'       # Unspecified (default) = Use all available GPUs. List of ints = CUDA device numbers to use.
 #env.TF_CPP_MIN_LOG_LEVEL                        = '1'       # 0 (default) = Print all available debug info from TensorFlow. 1 = Print warnings and errors, but disable debug info.
@@ -54,6 +54,11 @@ E_opt       = EasyDict(beta1=0.0, beta2=0.99, epsilon=1e-8) # Options for discri
 G_loss      = EasyDict(func='loss.G_bigan_acgan')            # Options for generator loss.
 D_loss      = EasyDict(func='loss.D_bigan_acgan')          # Options for discriminator loss.
 E_loss      = EasyDict(func='loss.E_bigan_acgan')
+
+#G_loss      = EasyDict(func='loss.G_lo_gan')            # Options for generator loss.
+#D_loss      = EasyDict(func='loss.D_lo_gan')          # Options for discriminator loss.
+#E_loss      = EasyDict(func='loss.E_lo_gan')
+
 sched       = EasyDict()                                    # Options for train.TrainingSchedule.
 grid        = EasyDict(size='1080p', layout='random')       # Options for train.setup_snapshot_image_grid().
 
@@ -108,7 +113,8 @@ desc += '-aiims_cc';            dataset = EasyDict(tfrecord_dir='aiims_cc_256');
 # Config presets (choose one).
 #desc += '-preset-v1-1gpu'; num_gpus = 1; D.mbstd_group_size = 16; sched.minibatch_base = 16; sched.minibatch_dict = {256: 14, 512: 6, 1024: 3}; sched.lod_training_kimg = 800; sched.lod_transition_kimg = 800; train.total_kimg = 19000
 #desc += '-preset-v2-1gpu'; num_gpus = 1; sched.minibatch_base = 4; sched.minibatch_dict = {4: 128, 8: 128, 16: 128, 32: 64, 64: 32, 128: 16, 256: 8, 512: 4, 1024: 3}; sched.G_lrate_dict = {1024: 0.0015}; sched.D_lrate_dict = EasyDict(sched.G_lrate_dict); train.total_kimg = 12000
-desc += '-preset-v2-2gpus'; num_gpus = 2; sched.minibatch_base = 8; sched.minibatch_dict = {4: 256, 8: 256, 16: 128, 32: 64, 64: 32, 128: 16, 256: 8, 1024: 4}; sched.G_lrate_dict = {512: 0.0015, 1024: 0.0015}; sched.D_lrate_dict = EasyDict(sched.G_lrate_dict); train.total_kimg = 12000; 
+#desc += '-preset-v2-2gpus'; num_gpus = 2; sched.minibatch_base = 8; sched.minibatch_dict = {4: 256, 8: 256, 16: 128, 32: 64, 64: 32, 128: 16, 256: 8, 1024: 4}; sched.G_lrate_dict = {512: 0.0015, 1024: 0.0015}; sched.D_lrate_dict = EasyDict(sched.G_lrate_dict); train.total_kimg = 12000; 
+desc += '-preset-v2-2gpus'; num_gpus = 2; sched.minibatch_base = 8; sched.minibatch_dict = {4: 256, 8: 256, 16: 128, 32: 64, 64: 64, 128: 32, 256: 16, 512: 8, 1024: 4}; sched.G_lrate_dict = {512: 0.0015, 1024: 0.0015}; sched.D_lrate_dict = EasyDict(sched.G_lrate_dict); train.total_kimg = 12000; 
 #desc += '-preset-v2-4gpus'; num_gpus = 4; sched.minibatch_base = 16; sched.minibatch_dict = {4: 512, 8: 256, 16: 128, 32: 64, 64: 32, 128: 16}; sched.G_lrate_dict = {256: 0.0015, 512: 0.002, 1024: 0.003}; sched.D_lrate_dict = EasyDict(sched.G_lrate_dict); train.total_kimg = 12000
 #desc += '-preset-v2-8gpus'; num_gpus = 8; sched.minibatch_base = 32; sched.minibatch_dict = {4: 512, 8: 256, 16: 128, 32: 64, 64: 32}; sched.G_lrate_dict = {128: 0.0015, 256: 0.002, 512: 0.003, 1024: 0.003}; sched.D_lrate_dict = EasyDict(sched.G_lrate_dict); train.total_kimg = 12000
 

@@ -15,6 +15,7 @@ import numpy as np
 from collections import OrderedDict 
 import scipy.ndimage
 import PIL.Image
+from scipy.stats import truncnorm
 
 import config
 import dataset
@@ -87,6 +88,9 @@ def save_all_res( max_res, Gs, res_subdir, num_pngs, grid_size=[1,1], random_see
     random_state = np.random.RandomState(random_seed)
     while ( shrink <= 5 ):
         curr_res = max_res//pow(2,shrink-1) 
+        
+        if curr_res < 64:
+            break
         
         res_dir = os.path.join(res_subdir, str(curr_res) + 'x' + str(curr_res) )
         if not os.path.exists(res_dir):
@@ -261,9 +265,13 @@ def load_network_pkl(run_id_or_result_subdir_or_network_pkl, snapshot=None):
 
 def random_latents(num_latents, G, random_state=None):
     if random_state is not None:
-        return random_state.randn(num_latents, *G.input_shape[1:]).astype(np.float32)
+        #return random_state.randn(num_latents, *G.input_shape[1:]).astype(np.float32)
+        return random_state.uniform(-1.0, 1.0, (num_latents, *G.input_shape[1:]) ).astype(np.float32)
+        #return np.array(truncnorm.rvs(-2,2,size=[num_latents, *G.input_shape[1:]]),dtype=np.float32)
     else:
-        return np.random.randn(num_latents, *G.input_shape[1:]).astype(np.float32)
+        #return np.random.randn(num_latents, *G.input_shape[1:]).astype(np.float32)
+        return np.random.uniform(-1.0, 1.0, (num_latents, *G.input_shape[1:]) ).astype(np.float32)
+        #return np.array(truncnorm.rvs(-2,2,size=[num_latents, *G.input_shape[1:]]),dtype=np.float32)
 
 def load_dataset_for_previous_run(run_id, **kwargs): # => dataset_obj, mirror_augment
     result_subdir = locate_result_subdir(run_id)

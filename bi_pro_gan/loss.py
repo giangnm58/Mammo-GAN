@@ -1,3 +1,4 @@
+
 # Copyright (c) 2018, NVIDIA CORPORATION. All rights reserved.
 #
 # This work is licensed under the Creative Commons Attribution-NonCommercial
@@ -197,7 +198,10 @@ def D_bigan_acgan(G, D, E, opt, training_set, minibatch_size, reals, labels, lat
     #latents = tf.random_normal([minibatch_size] + G.input_shapes[0][1:])
     latents = tf.random_uniform( [minibatch_size] + G.input_shapes[0][1:], -1.0, 1.0)
     fake_images_out = G.get_output_for(latents, labels, is_training=True)
+    
     L = E.get_output_for(reals, is_training=True)
+    X_hat = G.get_output_for(L, labels, is_training=True)
+    
     real_scores_out, real_labels_out = fp32(D.get_output_for(reals,L, is_training=True))
     fake_scores_out, fake_labels_out = fp32(D.get_output_for(fake_images_out,latents, is_training=True))
     real_scores_out = tfutil.autosummary('Loss/real_scores', real_scores_out)
@@ -205,9 +209,9 @@ def D_bigan_acgan(G, D, E, opt, training_set, minibatch_size, reals, labels, lat
     loss = fake_scores_out - real_scores_out
 
     with tf.name_scope('GradientPenalty'):
-        mixing_factors = tf.random_uniform([minibatch_size, 1, 1, 1], 0.0, 1.0, dtype=fake_images_out.dtype)
-        mixed_images_out = tfutil.lerp(tf.cast(reals, fake_images_out.dtype), fake_images_out, mixing_factors)
-        mixed_scores_out, mixed_labels_out = fp32(D.get_output_for(mixed_images_out,latents, is_training=True))
+        mixing_factors = tf.random_uniform([minibatch_size, 1, 1, 1], 0.0, 1.0, dtype=X_hat.dtype)
+        mixed_images_out = tfutil.lerp(tf.cast(reals, X_hat.dtype), X_hat, mixing_factors)
+        mixed_scores_out, mixed_labels_out = fp32(D.get_output_for(mixed_images_out,L, is_training=True))
         mixed_scores_out = tfutil.autosummary('Loss/mixed_scores', mixed_scores_out)
         mixed_loss = opt.apply_loss_scaling(tf.reduce_sum(mixed_scores_out))
         mixed_grads = opt.undo_loss_scaling(fp32(tf.gradients(mixed_loss, [mixed_images_out])[0]))
@@ -258,16 +262,5 @@ def E_bigan_acgan(G, D, E, opt, training_set, minibatch_size,reals,
 
     L = E.get_output_for(reals, is_training=True)
     real_scores_out, real_labels_out = fp32(D.get_output_for(reals,L, is_training=True))
-    loss = real_scores_out + eps * tf.abs( tf.norm( L ) - 1 )
+    loss = real_scores_out
     return loss
-
-
-
-
-
-
-    
-
-
-    
-    
