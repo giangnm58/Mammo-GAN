@@ -432,7 +432,7 @@ def pro_Encoder(
                     x = dense(x, fmaps=z_len,gain=np.sqrt(2)/4, use_wscale=use_wscale)
                     # x = tf.math.l2_normalize(x,axis=1)
                     x = PN(x)
-                    x = tf.nn.tanh(x)
+                    #x = tf.nn.tanh(x)
             return x
     
     # Linear structure: simple but inefficient.
