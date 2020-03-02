@@ -235,6 +235,7 @@ def test_noise_batch():
     print(Z.eval())
     coord.join(q)
     coord.request_stop()
+    sess.close()
 
 
 def generate_epsilon_batch(batch_size, name=None):
